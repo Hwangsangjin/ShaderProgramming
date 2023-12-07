@@ -1,6 +1,12 @@
 ﻿#include "ShaderFramework.h"
 #include <stdio.h>
 
+#define PI				3.14159265f
+#define FOV				(PI / 4.0f)							// 시야각
+#define ASPECT_RATIO	(WIN_WIDTH / (float)WIN_HEIGHT)		// 화면의 종횡비
+#define NEAR_PLANE		1									// 근접 평면
+#define FAR_PLANE		10000								// 원거리 평면
+
 //----------------------------------------------------------------------
 // 전역 변수
 //----------------------------------------------------------------------
@@ -139,9 +145,45 @@ void RenderFrame()
     gpD3DDevice->Present(nullptr, nullptr, nullptr, nullptr);
 }
 
-// 3D 물체등을 그린다.
+// 3D 물체 등을 그린다.
 void RenderScene()
 {
+	// 뷰 행렬을 만든다.
+	D3DXMATRIXA16 matView;
+	D3DXVECTOR3 vEye(0.0f, 0.0f, -200.0f);
+	D3DXVECTOR3 vLookAt(0.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 vUp(0.0f, 1.0f, 0.0f);
+	D3DXMatrixLookAtLH(&matView, &vEye, &vLookAt, &vUp);
+
+	// 투영 행렬을 만든다.
+	D3DXMATRIXA16 matProjection;
+	D3DXMatrixPerspectiveFovLH(&matProjection, FOV, ASPECT_RATIO, NEAR_PLANE, FAR_PLANE);
+
+	// 월드 행렬을 만든다.
+	D3DXMATRIXA16 matWorld;
+	D3DXMatrixIdentity(&matWorld);
+
+	// 셰이더 전역 변수들을 설정
+	gpColorShader->SetMatrix("gWorldMatrix", &matWorld);
+	gpColorShader->SetMatrix("gViewMatrix", &matView);
+	gpColorShader->SetMatrix("gProjectionMatrix", &matProjection);
+
+	// 셰이더를 시작한다.
+	UINT numPasses = 0;
+	gpColorShader->Begin(&numPasses, NULL);
+	{
+		for (UINT i = 0; i < numPasses; i++)
+		{
+			gpColorShader->BeginPass(i);
+			{
+				// 구체를 그린다.
+				gpSphere->DrawSubset(0);
+			}
+			gpColorShader->EndPass();
+		}
+	}
+	gpColorShader->End();
+
 }
 
 // 디버그 정보 등을 출력.
@@ -233,8 +275,18 @@ bool LoadAssets()
 	// 텍스처 로딩
 
 	// 셰이더 로딩
+	gpColorShader = LoadShader("ColorShader.fx");
+	if (!gpColorShader)
+	{
+		return false;
+	}
 
 	// 모델 로딩
+	gpSphere = LoadModel("Sphere.x");
+	if (!gpSphere)
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -313,8 +365,18 @@ void Cleanup()
 	}
 
 	// 모델을 release 한다.
+	if (gpSphere)
+	{
+		gpSphere->Release();
+		gpSphere = nullptr;
+	}
 
 	// 셰이더를 release 한다.
+	if (gpColorShader)
+	{
+		gpColorShader->Release();
+		gpColorShader = nullptr;
+	}
 
 	// 텍스처를 release 한다.
 

@@ -4,9 +4,6 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{caf3f721-6052-423e-b138-0f26f5bf86ae}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader Files">
-      <UniqueIdentifier>{b9731d7f-6af6-4965-9338-4d851c802bdc}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ShaderFramework.cpp">
